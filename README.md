@@ -39,3 +39,13 @@ Base transpose took 436.599 ms
 Imp transpose took 46.3716 ms
 OMP transpose took 37.8199 ms
 ````
+
+The above results need some explanation:
+- The unoptimized and improved symmetry check simply bail out as soon as
+  a different value is found, which explains why they are so fast
+- On the other hand, checkSymOMP checks the entire matrix
+- Base transpose has wildly varying timings, probably due to the
+  entire state of the system
+- The improved and OMP transpose are stable, they always take
+  47+-1ms and 37+-1ms.
+- This example is taken from a run performed on my system
