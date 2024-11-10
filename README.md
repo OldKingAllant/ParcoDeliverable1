@@ -17,7 +17,7 @@ To compile: g++ -std=c++11 -msse4.1 -fopenmp -lgomp -O3 ParcoDeliverable1/ParcoD
 
 # To run
 
-./ParcoDeliverable1 <N>
+./ParcoDeliverable1 N
 
 Where N is the number of rows and columns 
 
