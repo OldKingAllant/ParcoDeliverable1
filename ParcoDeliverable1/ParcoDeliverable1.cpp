@@ -112,6 +112,7 @@ int main(int argc, char* argv[])
 	if (is_symm != is_symm_omp) {
 		std::cout << "checkSymOMP not working" << std::endl;
 	}
+	
 	//////////////////////////////////
 
 	Benchmark([=]() -> void {matTranspose(the_matrix, T, N); }, "Base transpose", 1);
