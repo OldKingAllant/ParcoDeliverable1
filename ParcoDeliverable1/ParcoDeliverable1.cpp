@@ -5,7 +5,7 @@
 
 #include <memory>
 #include <chrono>
-#include <omp.h>
+#include <type_traits>
 
 //Use old ctime header for time(), rand() and srand()
 //Using the C++ distributions for random numbers is too much
@@ -15,15 +15,15 @@
 //memcmp()
 #include <cstring>
 
-#include <xmmintrin.h>
-#include <immintrin.h>
-
 //Project includes
 #include "Defs.h"
 #include "Bench.h"
 #include "Utils.h"
 #include "Matrix_utils.h"
 #include "Matrix_manip.h"
+
+//Default value of rows and cols
+static constexpr uint32_t CONST_N = 4096;
 
 ////////////////////////////////////////////////////////////
 // ///////////////////////MATRIX MANIP/CHECK FUNCTIONS//////

@@ -5,7 +5,7 @@
 #include <chrono>
 
 template <typename Func,
-	std::enable_if_t< std::is_same_v<decltype((std::declval<Func>())()), void>, bool> = true
+	typename std::enable_if< std::is_same<decltype((std::declval<Func>())()), void>::value, bool>::type = true
 >
 void Benchmark(Func&& function, const char* name, uint32_t repeat) {
 	uint32_t rep_temp = repeat;
@@ -22,7 +22,7 @@ void Benchmark(Func&& function, const char* name, uint32_t repeat) {
 }
 
 template <typename Func,
-	typename = std::enable_if_t< !std::is_same_v<decltype((std::declval<Func>())()), void>, bool>
+	typename = typename std::enable_if< !std::is_same<decltype((std::declval<Func>())()), void>::value, bool>::type
 >
 decltype((std::declval<Func>())()) Benchmark(Func&& function, const char* name, uint32_t repeat) {
 	uint32_t rep_temp = repeat;

@@ -1,0 +1,80 @@
+16x16
+Base transpose took 0.0004 ms
+Imp transpose took 0.000114 ms
+OMP transpose took 0.002748 ms
+Oblivious transpose took 0.000184 ms
+Oblivious OMP transpose took 0.001721 ms
+
+32x32
+Base transpose took 0.0013 ms
+Imp transpose took 0.000327 ms
+OMP transpose took 0.003232 ms
+Oblivious transpose took 0.000249 ms
+Oblivious OMP transpose took 0.001553 ms
+
+64x64
+Base transpose took 0.0042 ms
+Imp transpose took 0.001106 ms
+OMP transpose took 0.005263 ms
+Oblivious transpose took 0.00099 ms
+Oblivious OMP transpose took 0.002201 ms
+
+128x128
+Base transpose took 0.025 ms
+Imp transpose took 0.004316 ms
+OMP transpose took 0.008137 ms
+Oblivious transpose took 0.004303 ms
+Oblivious OMP transpose took 0.00774799 ms
+
+256x256
+Base transpose took 0.2699 ms
+Imp transpose took 0.02504 ms
+OMP transpose took 0.034622 ms
+Oblivious transpose took 0.022251 ms
+Oblivious OMP transpose took 0.013638 ms
+
+512x512
+Base transpose took 1.129 ms
+Imp transpose took 0.151531 ms
+OMP transpose took 0.076057 ms
+Oblivious transpose took 0.156223 ms
+Oblivious OMP transpose took 0.060164 ms
+
+1024x1024
+Base transpose took 3.0358 ms
+Imp transpose took 0.718854 ms
+OMP transpose took 0.231652 ms
+Oblivious transpose took 0.587216 ms
+Oblivious OMP transpose took 0.188362 ms
+
+2048x2048
+Base transpose took 26.1735 ms
+Imp transpose took 4.63776 ms
+OMP transpose took 3.32347 ms
+Oblivious transpose took 3.27435 ms
+Oblivious OMP transpose took 2.5016 ms
+
+4096x4096
+Base transpose took 111.705 ms
+Imp transpose took 21.8256 ms
+OMP transpose took 16.3783 ms
+Oblivious transpose took 16.7696 ms
+Oblivious OMP transpose took 11.35 ms
+
+8192x8192
+Base transpose took 579.094 ms
+Imp transpose took 94.0581 ms
+OMP transpose took 75.772 ms
+Oblivious transpose took 63.1807 ms
+Oblivious OMP transpose took 42.3551 ms
+
+16384x16384
+Base transpose took 13336.4 ms
+Imp transpose took 584.736 ms
+OMP transpose took 348.821 ms
+Oblivious transpose took 493.621 ms
+Oblivious OMP transpose took 225.155 ms
+
+On the cluster, performance plateus at 4 threads, since for 4+ 
+threads the bandwidth is saturated. For almost all conditions,
+the oblivious transpose is the fastest
