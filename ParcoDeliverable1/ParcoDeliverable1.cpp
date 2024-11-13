@@ -23,7 +23,7 @@
 #include "Matrix_manip.h"
 
 //Default value of rows and cols
-static constexpr uint32_t CONST_N = 4096;
+static constexpr uint32_t CONST_N = 8192;
 
 ////////////////////////////////////////////////////////////
 // ///////////////////////MATRIX MANIP/CHECK FUNCTIONS//////
@@ -107,7 +107,8 @@ int main(int argc, char* argv[])
 	}
 
 	/////////////////////////////////
-	bool is_symm_omp = Benchmark([=]() { return checkSymOMP(the_matrix, N); }, "checkSymOMP", 100);
+	bool is_symm_omp = BenchmarkThreads([=]() { return checkSymOMP(the_matrix, N); }, "checkSymOMP", 10, 
+		[](uint32_t current, uint32_t) { return current << 1; }, 2, 16);
 
 	if (is_symm != is_symm_omp) {
 		std::cout << "checkSymOMP not working" << std::endl;
@@ -118,12 +119,13 @@ int main(int argc, char* argv[])
 	Benchmark([=]() -> void {matTranspose(the_matrix, T, N); }, "Base transpose", 1);
 	
 	/////////////////////////////////
-	Benchmark([=]() { matTransposeImp(the_matrix, T2, N); }, "Imp transpose", 100);
+	Benchmark([=]() { matTransposeImp(the_matrix, T2, N); }, "Imp transpose", 10);
 	if (IsSameMatrix(T, T2, N))
 		std::cout << "Improved transpose not working" << std::endl;
 
 	////////////////////////////////
-	Benchmark([=]() { matTransposeOMP(the_matrix, T3, N); }, "OMP transpose", 100);
+	BenchmarkThreads([=]() { matTransposeOMP(the_matrix, T3, N); }, "OMP transpose", 10, 
+		[](uint32_t curr, uint32_t) { return curr << 1; }, 2, 16);
 	if (IsSameMatrix(T, T3, N))
 		std::cout << "OMP transpose not working" << std::endl;
 
@@ -137,7 +139,8 @@ int main(int argc, char* argv[])
 	//PrintMatrix(T4, N);
 
 	////////////////////////////////
-	Benchmark([=]() { matTransposeCacheObliviousOMP(the_matrix, T5, N); }, "Oblivious OMP transpose", 100);
+	BenchmarkThreads([=]() { matTransposeCacheObliviousOMP(the_matrix, T5, N); }, "Oblivious OMP transpose", 10, 
+		[](uint32_t curr, uint32_t) { return curr << 1; }, 2, 16);
 	if (IsSameMatrix(T, T5, N))
 		std::cout << "Oblivious transpose not working" << std::endl;
 

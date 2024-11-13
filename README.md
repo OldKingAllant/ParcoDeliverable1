@@ -13,23 +13,21 @@ necessary.
 Compiler: GCC/G++ 4.5+ or Clang 3.0+
 I only tested using GCC, both on local machine and cluster
 
-To compile: 
+To compile (from the top level of the project): 
 ````
-g++ -std=c++11 -msse4.1 -fopenmp -O3 -c ParcoDeliverable1/ParcoDeliverable1.cpp -o ParcoDeliverable1.o
-g++ -std=c++11 -msse4.1 -fopenmp -O3 -c ParcoDeliverable1/Utils.cpp -o Utils.o
-g++ -std=c++11 -msse4.1 -fopenmp -O3 -c ParcoDeliverable1/Matrix_utils.cpp -o Matrix_utils.o
-g++ -std=c++11 -msse4.1 -fopenmp -O3 -c ParcoDeliverable1/Matrix_manip.cpp -o Matrix_manip.o
-g++ -O3 -flto -lgomp ParcoDeliverable1.o Utils.o Matrix_utils.o Matrix_manip.o -o ParcoDeliverable1
+cmake -G "Unix Makefiles" .
+make
 ````
-(I will provide a simpler compilation process in the future)
+This will build the executable and put it in the directory
+ParcoDeliverable1, under with name ParcoDeliverable1
 
 It is also possible to add -ffast-math and -fno-math-errno to the compile flags,
 which produced a sensible speedup in the symmetry checks, but more or less
 no gain to the transpose 
 
-# To run
+# To run (from top level)
 
-./ParcoDeliverable1 N
+./ParcoDeliverable1/ParcoDeliverable1 N
 
 Where N is the number of rows and columns 
 
