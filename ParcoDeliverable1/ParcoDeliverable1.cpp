@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
 		std::cout << "OMP transpose not working" << std::endl;
 
 	////////////////////////////////
-	Benchmark([=]() { matTransposeCacheOblivious(the_matrix, T4, N); }, "Oblivious transpose", 100);
+	Benchmark([=]() { matTransposeCacheOblivious(the_matrix, T4, N); }, "Oblivious transpose", 10);
 	if (IsSameMatrix(T, T4, N))
 		std::cout << "Oblivious transpose not working" << std::endl;
 

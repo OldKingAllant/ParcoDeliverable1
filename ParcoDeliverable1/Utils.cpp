@@ -4,6 +4,8 @@
 #include <cstring>
 #include <iostream>
 
+#include <omp.h>
+
 //Init random number generation
 void InitRand() {
 	srand(time(0));
@@ -14,9 +16,24 @@ void InitRand() {
 Matrix CreateRandomMatrix(uint32_t N) {
 	const uint32_t TOT_SIZE = N * N;
 
-	auto unit_matrix = new MatType[TOT_SIZE]{};
+	auto unit_matrix = new MatType[TOT_SIZE];
 
 	//Init matrix linearly, one element at a time
+	//You may be asking, why are we using openmp here?
+	//Well my friend, this is useless when running
+	//on a desktop system with a normal desktop
+	//cpu, but necessary when running on a NUMA
+	//system.
+	//In principle, the new only reserves virtual memory,
+	//and does not, in fact, allocate physical memory.
+	//This allows us to perform the real init on 
+	//multiple threads that, hopefully, will be 
+	//distributed on different sockets in a smart
+	//way. By the time that we ready to run benchmarks
+	//for the matrix transposition, the matrix will be 
+	//distributed on the physical memory of multiple 
+	//sockets, allowing fast access from all threads
+#pragma omp parallel for
 	for (uint32_t index = 0; index < TOT_SIZE; index++) {
 		unit_matrix[index] = rand() % int(VALUE_MAX);
 	}
