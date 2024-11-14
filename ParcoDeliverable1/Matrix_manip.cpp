@@ -76,7 +76,7 @@ bool checkSymOMP(MatType* M, uint32_t N) {
 #pragma omp parallel reduction(+:num_errors)
 	{
 		for (uint32_t row_idx = 0; row_idx < N; row_idx += BLOCK_SIZE) {
-#pragma omp for collapse(2)
+#pragma omp for collapse(2) schedule(auto)
 			for (uint32_t col_idx = row_idx + 1; col_idx < N; col_idx += BLOCK_SIZE) {
 
 				for (uint32_t row_block = row_idx; row_block < std::min(row_idx + BLOCK_SIZE, N); row_block++) {
@@ -169,12 +169,26 @@ void matTransposeCacheOblivious(MatType const* M, MatType* T, uint32_t N) {
 }
 
 void matTransposeCacheObliviousOMP(MatType const* M, MatType* T, uint32_t N) {
-	auto omp_nested = omp_get_nested();
-	omp_set_nested(false);
 #pragma omp parallel
-#pragma omp single
+#pragma omp single nowait
 	{
 		matTransposeCacheObliviousImpOMP(M, T, N, N, 0, 0);
 	}
-	omp_set_nested(omp_nested);
+}
+
+void matTransposeFinal(MatType const* M, MatType* T, uint32_t N) {
+	using Dispatch = void(*)(MatType const* M, MatType* T, uint32_t N);
+
+	static const Dispatch jmp_table[] =
+	{
+		matTransposeImp,
+		matTransposeCacheOblivious,
+		matTransposeOMP,
+		matTransposeCacheObliviousOMP
+	};
+
+	uint32_t index = uint32_t(N >= 512) << 1;
+	index |= uint32_t((N & (N - 1)) == 0);
+
+	jmp_table[index](M, T, N);
 }

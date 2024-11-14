@@ -23,7 +23,8 @@
 #include "Matrix_manip.h"
 
 //Default value of rows and cols
-static constexpr uint32_t CONST_N = 8192;
+static constexpr uint32_t CONST_N = 600;
+static constexpr uint32_t MAX_THREADS = 16;
 
 ////////////////////////////////////////////////////////////
 // ///////////////////////MATRIX MANIP/CHECK FUNCTIONS//////
@@ -46,40 +47,34 @@ static constexpr uint32_t CONST_N = 8192;
 int main(int argc, char* argv[])
 {
 	uint32_t N = CONST_N;
+	uint32_t N_THREADS = MAX_THREADS;
 
 #ifndef USE_CONSTANT
-	if (argc < 2) {
+	if (argc < 3) {
 		std::cerr << "Missing arguments\n";
-		std::cerr << "Usage: " << argv[0] << " N" << std::endl;
+		std::cerr << "Usage: " << argv[0] << " <N> <MAX_NUM_THREADS>" << std::endl;
 		std::cin.get();
 		std::exit(0);
 	}
 
-	const char* m_size_str = argv[1];
-
-	try {
-		N = uint32_t(std::stoi(std::string{ m_size_str }));
-	}
-	catch (std::invalid_argument const&) {
-		std::cerr << "Invalid N" << std::endl;
-		std::exit(0);
-	}
+	N = TryParseUint32(argv[1], "Invalid N");
+	N_THREADS = TryParseUint32(argv[2], "Invalid MAX_NUM_THREADS");
 	
 #endif // !USE_CONSTANT
 
 	InitRand();
 
-	auto the_matrix = CreateRandomMatrix(N);
+	if (!VerifyNestedAvail()) {
+		std::cout << "Nested OMP threads not available" << std::endl;
+	}
+
+	auto the_matrix = CreateRandomMatrix(N, N_THREADS);
 
 	MatType* T = new MatType[N * N]{};
 	MatType* T2 = new MatType[N * N]{};
 	MatType* T3 = new MatType[N * N]{};
 	MatType* T4 = new MatType[N * N]{};
 	MatType* T5 = new MatType[N * N]{};
-
-	std::memset(T, 0, N * N);
-	std::memset(T2, 0, N * N);
-	std::memset(T3, 0, N * N);
 
 	const auto NUM_BYTES = uint64_t(N) * N * 4;
 
@@ -108,7 +103,7 @@ int main(int argc, char* argv[])
 
 	/////////////////////////////////
 	bool is_symm_omp = BenchmarkThreads([=]() { return checkSymOMP(the_matrix, N); }, "checkSymOMP", 10, 
-		[](uint32_t current, uint32_t) { return current << 1; }, 2, 16);
+		[](uint32_t current, uint32_t) { return current << 1; }, 2, N_THREADS);
 
 	if (is_symm != is_symm_omp) {
 		std::cout << "checkSymOMP not working" << std::endl;
@@ -125,7 +120,7 @@ int main(int argc, char* argv[])
 
 	////////////////////////////////
 	BenchmarkThreads([=]() { matTransposeOMP(the_matrix, T3, N); }, "OMP transpose", 10, 
-		[](uint32_t curr, uint32_t) { return curr << 1; }, 2, 16);
+		[](uint32_t curr, uint32_t) { return curr << 1; }, 2, N_THREADS);
 	if (IsSameMatrix(T, T3, N))
 		std::cout << "OMP transpose not working" << std::endl;
 
@@ -140,7 +135,7 @@ int main(int argc, char* argv[])
 
 	////////////////////////////////
 	BenchmarkThreads([=]() { matTransposeCacheObliviousOMP(the_matrix, T5, N); }, "Oblivious OMP transpose", 10, 
-		[](uint32_t curr, uint32_t) { return curr << 1; }, 2, 16);
+		[](uint32_t curr, uint32_t) { return curr << 1; }, 2, N_THREADS);
 	if (IsSameMatrix(T, T5, N))
 		std::cout << "Oblivious transpose not working" << std::endl;
 

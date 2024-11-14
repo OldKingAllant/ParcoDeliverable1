@@ -19,4 +19,6 @@ void matTransposeCacheOblivious(MatType const* M, MatType* T, uint32_t N);
 
 void matTransposeCacheObliviousOMP(MatType const* M, MatType* T, uint32_t N);
 
+void matTransposeFinal(MatType const* M, MatType* T, uint32_t N);
+
 #endif // !PARCO_MANIP

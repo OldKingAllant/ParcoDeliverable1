@@ -13,10 +13,15 @@ void InitRand() {
 
 //Allocate N*N contiguous memory
 //(do not use array of pointers for each row, bad for cache and paging)
-Matrix CreateRandomMatrix(uint32_t N) {
+Matrix CreateRandomMatrix(uint32_t N, uint32_t N_THREADS) {
 	const uint32_t TOT_SIZE = N * N;
 
 	auto unit_matrix = new MatType[TOT_SIZE];
+
+	int omp_dynamic = omp_get_dynamic();
+	omp_set_dynamic(0);
+
+	omp_set_num_threads(N_THREADS);
 
 	//Init matrix linearly, one element at a time
 	//You may be asking, why are we using openmp here?
@@ -38,10 +43,11 @@ Matrix CreateRandomMatrix(uint32_t N) {
 		unit_matrix[index] = rand() % int(VALUE_MAX);
 	}
 
+	omp_set_dynamic(omp_dynamic);
+
 	return unit_matrix;
 }
 
-//Print matrix to console, row by row
 void PrintMatrix(MatType* mat, uint32_t N) {
 	if (mat == nullptr)
 		return;
@@ -55,7 +61,47 @@ void PrintMatrix(MatType* mat, uint32_t N) {
 	}
 }
 
-//Compare two matrices for equality, by using brute-force memcmp
 int IsSameMatrix(MatType const* M, MatType const* T, uint32_t N) {
+	//Compare two matrices for equality, by using brute-force memcmp
 	return std::memcmp(M, T, (N * N) * sizeof(MatType));
+}
+
+uint32_t TryParseUint32(const char* str, const char* err_msg) {
+	uint32_t parsed_value = 0;
+
+	try {
+		parsed_value = uint32_t(std::stoi(std::string{ str }));
+	}
+	catch (...) {
+		std::cerr << err_msg << std::endl;
+		std::exit(0);
+	}
+
+	return parsed_value;
+}
+
+////////////////////////////////////////////////
+//Nothing to see here
+
+MatType* AllocateAndInit(uint32_t N) {
+	MatType* T = new MatType[N * N];
+
+#pragma omp parallel for
+	for (uint32_t i = 0; i < N * N; i++) {
+		T[i] = 0;
+	}
+
+	return T;
+}
+
+bool VerifyNestedAvail() {
+	int omp_nested = omp_get_nested();
+	
+	omp_set_nested(1);
+
+	bool avail = omp_get_nested() == 1;
+
+	omp_set_nested(omp_nested);
+
+	return avail;
 }

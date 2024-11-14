@@ -11,25 +11,18 @@ uint32_t ComputeBlockSize(uint32_t N, uint32_t CACHE_LINE) {
 	uint32_t curr_block_sz = 1;
 	uint32_t block_sz = 1;
 
+	//Set max block size as (CACHE_LINE_SIZE / 4) * 1.5
 	uint32_t upper_bound = uint32_t(float(CACHE_LINE / sizeof(MatType)) * 1.5f);
 
 	while (curr_block_sz <= N && curr_block_sz <= upper_bound) {
-		if (N % curr_block_sz == 0) block_sz = curr_block_sz;
+		if (N % curr_block_sz == 0) block_sz = curr_block_sz; //accept only 
+															  //block sizes that divide N perfectly
 		curr_block_sz++;
 	}
 
 	return block_sz;
 }
 
-/// <summary>
-/// Transpose 4x4 block by using sse 4.1 
-/// instructions (20 operations)
-/// </summary>
-/// <param name="src">Src pointer</param>
-/// <param name="dst">Dst pointer</param>
-/// <param name="row">Row offset inside src</param>
-/// <param name="col">Col offset inside dst</param>
-/// <param name="N">Matrix size</param>
 void Transpose4x4(MatType const* src, MatType* dst,
 	uint32_t row, uint32_t col, uint32_t N) {
 	__m128 row1{}, row2{}, row3{}, row4{};
@@ -116,11 +109,6 @@ void Transpose4x4(MatType const* src, MatType* dst,
 	_mm_storeu_ps(&dst[(col + 3) * N + row], t4);
 }
 
-//Same principle as the previous tranpose, but use
-//aligned load/stores.
-//WARNING: The function does not check if the alignment
-//is correct. The program will crash with SIGSEGV
-//if it is not
 void Transpose4x4_Aligned(MatType const* src, MatType* dst,
 	uint32_t row, uint32_t col, uint32_t N) {
 	__m128 row1{}, row2{}, row3{}, row4{};
@@ -187,11 +175,17 @@ void BlockTranspose_NoSSE(MatType const* M, MatType* T, uint32_t N, uint32_t BLO
 }
 
 void BlockTranspose_NoSSE_OMP(MatType const* M, MatType* T, uint32_t N, uint32_t BLOCK_SIZE) {
+	//I noted that putting the parallel here and the for
+	//inside the first loop drastically improves performance
 #pragma omp parallel
 	{
 		for (uint32_t row_idx = 0; row_idx < N; row_idx += BLOCK_SIZE) {
-#pragma omp for collapse(2)
+			//Use schedule(auto) so that we can change scheduling
+			//by using env variable OMP_SCHEDULE
+#pragma omp for collapse(2) schedule(auto)
 			for (uint32_t col_idx = 0; col_idx < N; col_idx += BLOCK_SIZE) {
+				//We can compute the bounds only in the loop conditions
+				//Otherwise collapse fails
 				for (uint32_t row_block = row_idx; row_block < std::min(row_idx + BLOCK_SIZE, N); row_block++) {
 					for (uint32_t col_block = col_idx; col_block < std::min(col_idx + BLOCK_SIZE, N); col_block++) {
 						T[col_block * N + row_block] = M[row_block * N + col_block];
@@ -214,29 +208,11 @@ if constexpr is available starting from C++17
 void matTransposeCacheObliviousImp(MatType const* M, MatType* T, uint32_t N,
 	uint32_t N_rem, uint32_t col_offset, uint32_t row_offset) {
 	if (N_rem <= 32) {
+		//End condition, size is small enough
 
-		/*
-			uint32_t row_idx = 0, col_idx = 0;
-
-			for (; row_idx + 4 <= N_rem; row_idx += 4) {
-				for (col_idx = 0; col_idx + 4 <= N_rem; col_idx += 4) {
-					Transpose4x4(M, T, row_offset + row_idx,
-						col_offset + col_idx, N);
-				}
-			}
-
-			//Transpose last columns and rows
-			for (uint32_t new_row_idx = 0; new_row_idx < N_rem; new_row_idx++) {
-				for (uint32_t new_col_idx = col_idx; new_col_idx < N_rem; new_col_idx++) {
-					T[(col_offset + new_col_idx) * N + (row_offset + new_row_idx)]
-						= M[(row_offset + new_row_idx) * N + (col_offset + new_col_idx)];
-					T[(row_offset + new_row_idx) * N + (col_offset + new_col_idx)]
-						= M[(col_offset + new_col_idx) * N + (row_offset + new_row_idx)];
-				}
-			}
-		*/
-
-		if (N_rem % 4 == 0) {
+		if (N_rem % 4 == 0) { //Use sse
+			//We trust the caller and expect the matrix to be
+			//16-bytes aligned
 			for (uint32_t row_idx = 0; row_idx < N_rem; row_idx += 4) {
 				for (uint32_t col_idx = 0; col_idx < N_rem; col_idx += 4) {
 					Transpose4x4_Aligned(M, T, row_offset + row_idx,
@@ -245,6 +221,7 @@ void matTransposeCacheObliviousImp(MatType const* M, MatType* T, uint32_t N,
 			}
 		}
 		else {
+			//Use normal transpose
 			for (uint32_t row_idx = 0; row_idx < N_rem; row_idx++) {
 				for (uint32_t col_idx = 0; col_idx < N_rem; col_idx++) {
 					T[(col_idx + col_offset) * N + (row_offset + row_idx)] =
@@ -255,6 +232,7 @@ void matTransposeCacheObliviousImp(MatType const* M, MatType* T, uint32_t N,
 
 	}
 	else {
+		//Divide and conquer in 4 submatrices
 		uint32_t half_size = N_rem / 2;
 		matTransposeCacheObliviousImp(M, T, N, half_size, col_offset, row_offset);
 		matTransposeCacheObliviousImp(M, T, N, half_size, col_offset + half_size, row_offset);
@@ -263,6 +241,7 @@ void matTransposeCacheObliviousImp(MatType const* M, MatType* T, uint32_t N,
 		matTransposeCacheObliviousImp(M, T, N, half_size, col_offset + half_size, row_offset + half_size);
 
 		if (N_rem & 1) {
+			//Size is not even, must transpose last row and column
 			for (uint32_t row_idx = 0; row_idx < N_rem; row_idx++) {
 				T[(col_offset + N_rem - 1) * N + (row_offset + row_idx)] =
 					M[(row_offset + row_idx) * N + (col_offset + N_rem - 1)];
@@ -300,15 +279,20 @@ void matTransposeCacheObliviousImpOMP(MatType const* M, MatType* T, uint32_t N,
 	else {
 		uint32_t half_size = N_rem / 2;
 
+//Run 4 different tasks. Top level will spawn 
+//4 different threads. Whether the other levels
+//add new threads or not depends on external factors
+		{
 #pragma omp task 
-		matTransposeCacheObliviousImp(M, T, N, half_size, col_offset, row_offset);
+			matTransposeCacheObliviousImp(M, T, N, half_size, col_offset, row_offset);
 #pragma omp task 
-		matTransposeCacheObliviousImp(M, T, N, half_size, col_offset + half_size, row_offset);
+			matTransposeCacheObliviousImp(M, T, N, half_size, col_offset + half_size, row_offset);
 #pragma omp task 
-		matTransposeCacheObliviousImp(M, T, N, half_size, col_offset, row_offset + half_size);
+			matTransposeCacheObliviousImp(M, T, N, half_size, col_offset, row_offset + half_size);
 #pragma omp task 
-		matTransposeCacheObliviousImp(M, T, N, half_size, col_offset + half_size, row_offset + half_size);
+			matTransposeCacheObliviousImp(M, T, N, half_size, col_offset + half_size, row_offset + half_size);
 #pragma omp taskwait
+		}
 
 		if (N_rem & 1) {
 			for (uint32_t row_idx = 0; row_idx < N_rem; row_idx++) {
@@ -321,6 +305,8 @@ void matTransposeCacheObliviousImpOMP(MatType const* M, MatType* T, uint32_t N,
 		}
 	}
 }
+
+//These functions below follow the same principle as the blocked non-sse transform
 
 template <>
 void BlockTranspose_SSE<true>(MatType const* M, MatType* T, uint32_t N, uint32_t BLOCK_SIZE) {
@@ -356,7 +342,7 @@ template <>
 void BlockTranspose_SSE_OMP<true>(MatType const* M, MatType* T, uint32_t N, uint32_t BLOCK_SIZE) {
 #pragma omp parallel
 	for (uint32_t row_idx = 0; row_idx < N; row_idx += BLOCK_SIZE) {
-#pragma omp for collapse(2)
+#pragma omp for collapse(2) schedule(auto)
 		for (uint32_t col_idx = 0; col_idx < N; col_idx += BLOCK_SIZE) {
 
 			for (uint32_t row_block = row_idx; row_block < row_idx + BLOCK_SIZE; row_block += 4) {
@@ -373,7 +359,7 @@ template <>
 void BlockTranspose_SSE_OMP<false>(MatType const* M, MatType* T, uint32_t N, uint32_t BLOCK_SIZE) {
 #pragma omp parallel
 	for (uint32_t row_idx = 0; row_idx < N; row_idx += BLOCK_SIZE) {
-#pragma omp for collapse(2)
+#pragma omp for collapse(2) schedule(auto)
 		for (uint32_t col_idx = 0; col_idx < N; col_idx += BLOCK_SIZE) {
 
 			for (uint32_t row_block = row_idx; row_block < row_idx + BLOCK_SIZE; row_block += 4) {

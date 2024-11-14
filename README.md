@@ -15,11 +15,11 @@ I only tested using GCC, both on local machine and cluster
 
 To compile (from the top level of the project): 
 ````
-cmake -G "Unix Makefiles" .
+cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" .
 make
 ````
 This will build the executable and put it in the directory
-ParcoDeliverable1, under with name ParcoDeliverable1
+ParcoDeliverable1, under the name ParcoDeliverable1
 
 It is also possible to add -ffast-math and -fno-math-errno to the compile flags,
 which produced a sensible speedup in the symmetry checks, but more or less
@@ -27,27 +27,39 @@ no gain to the transpose
 
 # To run (from top level)
 
-./ParcoDeliverable1/ParcoDeliverable1 N
+OMP_SCHEDULE=static OMP_PROC_BIND=true ./ParcoDeliverable1/ParcoDeliverable1 N MAX_THREADS
 
-Where N is the number of rows and columns 
+Where N is the number of rows and columns and MAX_THREADS is
+the maximum number of OMP threads used for the benchmarks
 
 # Results
 
-The program runs the different version of the algorithm 100 times each and computes
+The program runs the different version of the algorithm 10 times for each number of threads and computes
 the average of the wall clock time
 
 Example run:
 ````
-Testing for 8000 rows and columns
-Which means 64000000 elements
-For a total 0.25 GB
-Base symm check took 0.0003 ms
+Testing for 8192 rows and columns
+Which means 67108864 elements
+For a total 0.262144 GB
+Base symm check took 0.0005 ms
 Matrix is not symmetric
-checkSymImp took 5e-05 ms
-checkSymOMP took 19.6392 ms
-Base transpose took 436.599 ms
-Imp transpose took 46.3716 ms
-OMP transpose took 37.8199 ms
+checkSymImp took 5.1e-05 ms
+checkSymOMP with 2 threads took 73.1731 ms
+checkSymOMP with 4 threads took 42.5234 ms
+checkSymOMP with 8 threads took 74.527 ms
+checkSymOMP with 16 threads took 102.034 ms
+Base transpose took 586.433 ms
+Imp transpose took 92.3785 ms
+OMP transpose with 2 threads took 75.9511 ms
+OMP transpose with 4 threads took 75.7223 ms
+OMP transpose with 8 threads took 86.6244 ms
+OMP transpose with 16 threads took 104.492 ms
+Oblivious transpose took 61.9979 ms
+Oblivious OMP transpose with 2 threads took 40.7665 ms
+Oblivious OMP transpose with 4 threads took 39.747 ms
+Oblivious OMP transpose with 8 threads took 41.7035 ms
+Oblivious OMP transpose with 16 threads took 40.5148 ms
 ````
 
 The above results need some explanation:
@@ -56,6 +68,4 @@ The above results need some explanation:
 - On the other hand, checkSymOMP checks the entire matrix
 - Base transpose has wildly varying timings, probably due to the
   entire state of the system
-- The improved and OMP transpose are stable, they always take
-  47+-1ms and 37+-1ms.
 - This example is taken from a run performed on my system
