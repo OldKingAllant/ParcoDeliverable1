@@ -104,8 +104,8 @@ def output_transpose(data, n_threads):
 	line_transose = plt.plot(collect_n, collect_transpose, '^-b', label='Base transpose')
 	line_imp_tran = plt.plot(collect_n, collect_imp_transpose, 's-r', label='Imp transpose')
 	line_obv_tran = plt.plot(collect_n, collect_obv_transpose, 'D-g', label='Oblivious transpose')
-	line_omp_tran = plt.plot(collect_n, collect_omp_transpose, 'o-y', label='OMP transpose')
-	line_omp_obv = plt.plot(collect_n, collect_obv_omp_transpose, '*-k', label='OMP Oblivious')
+	line_omp_tran = plt.plot(collect_n, collect_omp_transpose, 'o-y', label=f'OMP transpose {n_threads} threads')
+	line_omp_obv = plt.plot(collect_n, collect_obv_omp_transpose, '*-k', label=f'OMP Oblivious {n_threads} threads')
 
 	plt.legend()
 	plt.savefig('trans.png')
