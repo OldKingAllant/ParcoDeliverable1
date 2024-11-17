@@ -2,6 +2,7 @@
 #define PARCO_BENCH
 
 #include <iostream>
+#include <fstream>
 #include <chrono>
 #include <omp.h>
 
@@ -20,7 +21,7 @@
 template <typename Func,
 	typename std::enable_if< std::is_same<decltype((std::declval<Func>())()), void>::value, bool>::type = true
 >
-void Benchmark(Func&& function, const char* name, uint32_t repeat) {
+void Benchmark(Func&& function, const char* name, uint32_t repeat, std::ofstream& out) {
 	uint32_t rep_temp = repeat;
 	auto start = std::chrono::high_resolution_clock::now();
 
@@ -32,6 +33,8 @@ void Benchmark(Func&& function, const char* name, uint32_t repeat) {
 
 	auto diff = (end - start).count() / 1e6;
 	std::cout << name << " took " << diff / rep_temp << " ms" << std::endl;
+
+	out << diff / rep_temp << std::endl;
 }
 
 /// <summary>
@@ -54,7 +57,8 @@ void Benchmark(Func&& function, const char* name, uint32_t repeat) {
 template <typename Func,
 	typename = typename std::enable_if< !std::is_same<decltype((std::declval<Func>())()), void>::value, bool>::type
 >
-decltype((std::declval<Func>())()) Benchmark(Func&& function, const char* name, uint32_t repeat) {
+decltype((std::declval<Func>())()) Benchmark(Func&& function, const char* name, uint32_t repeat, 
+	std::ofstream& out) {
 	uint32_t rep_temp = repeat;
 	using RetType = decltype(function()); //Deduce return type
 	RetType ret{};
@@ -69,6 +73,8 @@ decltype((std::declval<Func>())()) Benchmark(Func&& function, const char* name, 
 
 	auto diff = (end - start).count() / 1e6;
 	std::cout << name << " took " << diff / rep_temp << " ms" << std::endl;
+
+	out << diff / rep_temp << std::endl;
 
 	return ret;
 }
@@ -92,7 +98,8 @@ decltype((std::declval<Func>())()) Benchmark(Func&& function, const char* name, 
 template <typename Func, typename IncFunc,
 	typename std::enable_if< std::is_same<decltype((std::declval<Func>())()), void>::value, bool>::type = true
 >
-void BenchmarkThreads(Func&& function, const char* name, uint32_t repeat, IncFunc&& inc_func, uint32_t init, uint32_t limit) {
+void BenchmarkThreads(Func&& function, const char* name, uint32_t repeat, IncFunc&& inc_func, uint32_t init, uint32_t limit,
+	std::ofstream& out) {
 	uint32_t num_cycles = 0;
 	uint32_t curr_rep = repeat;
 	uint32_t orig_rep = repeat;
@@ -118,6 +125,8 @@ void BenchmarkThreads(Func&& function, const char* name, uint32_t repeat, IncFun
 
 		auto diff = (end - start).count() / 1e6;
 		std::cout << name << " with " << init << " threads took " << diff / rep_temp << " ms" << std::endl;
+
+		out << init << " " << diff / rep_temp << std::endl;
 
 		//Get next thread count
 		init = inc_func(init, num_cycles++);
@@ -145,7 +154,7 @@ template <typename Func, typename IncFunc,
 	typename = typename std::enable_if< !std::is_same<decltype((std::declval<Func>())()), void>::value, bool>::type
 >
 decltype((std::declval<Func>())()) BenchmarkThreads(Func&& function, const char* name, uint32_t repeat
-	, IncFunc&& inc_func, uint32_t init, uint32_t limit) {
+	, IncFunc&& inc_func, uint32_t init, uint32_t limit, std::ofstream& out) {
 	using RetType = decltype(function());
 	RetType ret{};
 
@@ -170,6 +179,8 @@ decltype((std::declval<Func>())()) BenchmarkThreads(Func&& function, const char*
 
 		auto diff = (end - start).count() / 1e6;
 		std::cout << name << " with " << init << " threads took " << diff / rep_temp << " ms" << std::endl;
+
+		out << init << " " << diff / rep_temp << std::endl;
 
 		init = inc_func(init, num_cycles++);
 	}

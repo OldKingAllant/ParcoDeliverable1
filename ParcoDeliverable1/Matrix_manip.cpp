@@ -11,6 +11,8 @@
 //Linear, "unoptimized" function
 //for checking if the matrix is symmetrical
 bool checkSym(MatType* M, uint32_t N) {
+	bool is_symm = true;
+
 	for (uint32_t row_idx = 0; row_idx < N; row_idx++) {
 		//Do a little optimization that will cut read/compare
 		//in half, by skipping the left-hand side of the matrix
@@ -19,12 +21,18 @@ bool checkSym(MatType* M, uint32_t N) {
 		//values will always be equal)
 		for (uint32_t col_idx = row_idx + 1; col_idx < N; col_idx++) {
 			if (M[row_idx * N + col_idx] != M[col_idx * N + row_idx]) {
-				return false;
+				//Here we could simply return false immediately,
+				//which would cut the execution time by several orders
+				//of magnitude in 99.9% of cases.
+				//However, here we are trying to compare the
+				//performance of different implementations,
+				//so we cannot do that
+				is_symm = false;
 			}
 		}
 	}
 
-	return true;
+	return is_symm;
 }
 
 /*
@@ -48,6 +56,8 @@ bool checkSym(MatType* M, uint32_t N) {
 * element that does not match
 */
 bool checkSymImp(MatType* M, uint32_t N) {
+	bool is_symm = true;
+
 	uint32_t BLOCK_SIZE = ComputeBlockSize(N, CACHE_LINE_SIZE);
 
 	for (uint32_t row_idx = 0; row_idx < N; row_idx += BLOCK_SIZE) {
@@ -58,14 +68,15 @@ bool checkSymImp(MatType* M, uint32_t N) {
 
 			for (uint32_t row_block = row_idx; row_block < row_bound; row_block++) {
 				for (uint32_t col_block = col_idx; col_block < col_bound; col_block++) {
-					if (M[row_block * N + col_block] != M[col_block * N + row_block]) return false;
+					if (M[row_block * N + col_block] != M[col_block * N + row_block])
+						is_symm = false;
 				}
 			}
 
 		}
 	}
 
-	return true;
+	return is_symm;
 }
 
 bool checkSymOMP(MatType* M, uint32_t N) {

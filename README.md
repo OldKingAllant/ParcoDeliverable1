@@ -32,40 +32,20 @@ OMP_SCHEDULE=static OMP_PROC_BIND=true ./ParcoDeliverable1/ParcoDeliverable1 N M
 Where N is the number of rows and columns and MAX_THREADS is
 the maximum number of OMP threads used for the benchmarks
 
+If you want to generate benchmark graphs, make sure
+to install matplotlib and then use the python script present
+in the top level directory:
+````
+python generate_graphs.py benchmark_file n_threads
+````
+
+Where benchmark_file is the output file of the executable
+and n_threads selects a specific number of threads to compare
+against the serial versions
+
 # Results
 
 The program runs the different version of the algorithm 10 times for each number of threads and computes
-the average of the wall clock time
-
-Example run:
-````
-Testing for 8192 rows and columns
-Which means 67108864 elements
-For a total 0.262144 GB
-Base symm check took 0.0005 ms
-Matrix is not symmetric
-checkSymImp took 5.1e-05 ms
-checkSymOMP with 2 threads took 73.1731 ms
-checkSymOMP with 4 threads took 42.5234 ms
-checkSymOMP with 8 threads took 74.527 ms
-checkSymOMP with 16 threads took 102.034 ms
-Base transpose took 586.433 ms
-Imp transpose took 92.3785 ms
-OMP transpose with 2 threads took 75.9511 ms
-OMP transpose with 4 threads took 75.7223 ms
-OMP transpose with 8 threads took 86.6244 ms
-OMP transpose with 16 threads took 104.492 ms
-Oblivious transpose took 61.9979 ms
-Oblivious OMP transpose with 2 threads took 40.7665 ms
-Oblivious OMP transpose with 4 threads took 39.747 ms
-Oblivious OMP transpose with 8 threads took 41.7035 ms
-Oblivious OMP transpose with 16 threads took 40.5148 ms
-````
-
-The above results need some explanation:
-- The unoptimized and improved symmetry check simply bail out as soon as
-  a different value is found, which explains why they are so fast
-- On the other hand, checkSymOMP checks the entire matrix
-- Base transpose has wildly varying timings, probably due to the
-  entire state of the system
-- This example is taken from a run performed on my system
+the average of the wall clock time.
+Collected data is output to a file named bench.txt under a custom text format and can
+be used by the python script to generate graphs
