@@ -12,6 +12,7 @@ as initially it used features from C++17/20. Now, only C++11 is
 necessary. 
 Compiler: GCC/G++ 4.5+ or Clang 3.0+
 I only tested using GCC, both on local machine and cluster
+Moreover, cmake 3.15+ and GNU Make are used
 
 To compile (from the top level of the project): 
 ````
