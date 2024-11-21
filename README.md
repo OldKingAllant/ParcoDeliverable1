@@ -7,15 +7,17 @@ The folder ParcoDeliverable1 contains the source code
 
 # Compilation
 
-The source file has been modified to allow the usage of old compiler,
+The source file has been modified to allow the usage of old compilers,
 as initially it used features from C++17/20. Now, only C++11 is
 necessary. 
 Compiler: GCC/G++ 4.5+ or Clang 3.0+
 I only tested using GCC, both on local machine and cluster
-Moreover, cmake 3.15+ and GNU Make are used
+Moreover, cmake 3.15+ and GNU Make are necessary
 
 To compile (from the top level of the project): 
 ````
+git clone "repository link"
+cd ParcoDeliverable1
 cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" .
 make
 ````
@@ -27,10 +29,11 @@ which produced a sensible speedup in the symmetry checks, but more or less
 no gain to the transpose 
 
 # To run (from top level)
-
+````
 OMP_SCHEDULE=static OMP_PROC_BIND=true ./ParcoDeliverable1/ParcoDeliverable1 N MAX_THREADS
+````
 
-Where N is the number of rows and columns and MAX_THREADS is
+Where N is the max number of rows and columns and MAX_THREADS is
 the maximum number of OMP threads used for the benchmarks
 
 If you want to generate benchmark graphs, make sure
